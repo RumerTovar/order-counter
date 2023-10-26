@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import Chart from '../components/Chart';
-import Image from 'next/image';
-import addIcon from '../../public/add_FILL0_wght400_GRAD0_opsz24.svg';
+import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
 
 interface Order {
  id: number;
@@ -14,10 +14,13 @@ interface Order {
 }
 
 export default function Home() {
+ const [date, setDate] = useState('month');
  const [orders, setOrders] = useState<Order[] | null>(null);
  const [total, setTotal] = useState(0);
+ const [test, setTest] = useState(0);
 
  useEffect(() => {
+  setTest(95);
   const getOrdersFromLocal = localStorage.getItem('orders');
 
   const calculateTotal = (ordersData: Order[]) => {
@@ -52,47 +55,86 @@ export default function Home() {
   }
  }, []);
 
+ const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  setDate(event.target.value);
+ };
+
+ //esto se debe calcular segun los meses porque todos los meses no traen 31 dias
+
+ const days = [
+  22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+  13, 14, 15, 16, 17, 18, 19, 20, 21,
+ ];
+
  return (
   <main className='flex min-h-screen flex-col'>
-   {/* se puede seleccionar la opcion de por año o por mes para ver los graficos.
-    
-    En el grafico de años salen los meses en la leyenda
-    
-    En el grafico de meses salen los dias en la leyenda*/}
-
    <section className='flex flex-col bg-gradient-to-t from-pink-950 via-black  to-black to-60% '>
     <h1 className='h-fit p-4 pb-8 text-center'>PEDIDOS</h1>
-    <h2 className='text-center text-pink-900 p-2'>TOTAL / AÑO</h2>
-    <h3 className='text-center text-4xl'>{total}</h3>
-    <div className='py-10'>
+    <select
+     className='text-center text-[#eb3356] p-1  mx-36 bg-black'
+     value={date}
+     onChange={handleSelectChange}>
+     <option value='month'>MES</option>
+     <option value='year'>AÑO</option>
+    </select>
+
+    <h3 className='text-center text-4xl pt-10'>{total}</h3>
+    <div className='pt-5'>
      <Chart />
     </div>
    </section>
    <section className='flex-1  bg-black'>
-    <article className='flex overflow-x-auto  space-x-2 p-2 bg-stone-900 text-sm text-gray-600'>
-     <div>ENE</div>
-     <div>FEB</div>
-     <div>MAR</div>
-     <div>ABR</div>
-     <div>MAY</div>
-     <div>JUN</div>
-     <div>JUL</div>
-     <div>AGO</div>
-     <div>SEP</div>
-     <div>OCT</div>
-     <div>NOV</div>
-     <div>DIC</div>
+    <article className='flex overflow-x-auto overflow-visible space-x-4 bg-stone-800 text-neutral-600  py-2 px-2 border-t border-t-[#eb3356] '>
+     {date === 'year' ? (
+      <>
+       <span className='whitespace-nowrap'>Ene-Feb</span>
+       <span className='whitespace-nowrap'>Feb-Mar</span>
+       <span className='whitespace-nowrap'>Mar-May</span>
+       <span className='whitespace-nowrap'>May-Jun</span>
+       <span className='whitespace-nowrap'>Jun-Jul</span>
+       <span className='whitespace-nowrap'>Jul-Ago</span>
+       <span className='whitespace-nowrap text-white'>Ago-Sep</span>
+       <span className='whitespace-nowrap'>Sep-Oct</span>
+       <span className='whitespace-nowrap'>Oct-Nov</span>
+       <span className='whitespace-nowrap'>Nov-Dic</span>
+      </>
+     ) : (
+      <>
+       {days.map((day) => {
+        return (
+         <span className='whitespace-nowrap' key={day}>
+          {day}
+         </span>
+        );
+       })}
+      </>
+     )}
     </article>
-    <div className='flex space-x-10 items-center justify-center'>
-     <button className='border-4 border-pink-600 rounded-full p-2'>
+
+    <div className='flex w-full justify-center align-middle py-20'>
+     <div className='w-20 h-20 '>
+      <CircularProgressbar
+       value={test}
+       text={`${test}%`}
+       styles={buildStyles({
+        textColor: '#ffffff',
+        trailColor: 'black',
+        pathColor: '#eb3356',
+       })}
+      />
+     </div>
+    </div>
+
+    <div className='flex space-x-28 items-center justify-center'>
+     <button className='border-4 border-[#eb3356] rounded-full p-2'>
       <svg
-       className='h-8 w-8 fill-current  text-white '
+       className='h-8 w-8 fill-current  text-white'
        xmlns='http://www.w3.org/2000/svg'
        viewBox='0 -960 960 960'>
        <path d='M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z' />
       </svg>
      </button>
-     <button className='border-4 border-pink-600 rounded-full p-2'>
+     <button className='border-4 border-[#eb3356] rounded-full p-2'>
       <svg
        className='h-8 w-8 fill-current  text-white'
        xmlns='http://www.w3.org/2000/svg'

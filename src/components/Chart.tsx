@@ -40,8 +40,8 @@ export const options = {
   },
  },
 };
-const orders = [10, 5, 3, 15, 4, 12, 2];
-const labels = ['January', 'February', 'March', 'April', 'May', 'June', 'July'];
+const orders = [24, 235, 198, 212, 226];
+const labels = ['Jul-Ago', 'Ago-Sep', 'Sep-Oct', 'Oct-Nov', 'Nov-dic'];
 
 const data = {
  labels,
@@ -50,7 +50,7 @@ const data = {
    label: 'Dataset 1',
    data: orders,
    tension: 0.5,
-   borderColor: 'rgb(255, 99, 132)',
+   borderColor: '#eb3356',
    pointBorderWidth: 0,
   },
  ],
