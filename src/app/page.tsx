@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import Chart from '../components/Chart';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
+import { useGetMonth } from './hooks/useGetMonth';
+import { useGetDaysInCycle } from './hooks/useGetDaysinCicle';
 
 interface Order {
  id: number;
@@ -14,10 +16,18 @@ interface Order {
 }
 
 export default function Home() {
+ const { currentDay, currentYear, selectedSpan } = useGetMonth();
+
  const [date, setDate] = useState('month');
  const [orders, setOrders] = useState<Order[] | null>(null);
  const [total, setTotal] = useState(0);
  const [test, setTest] = useState(0);
+ const [selectedMonth, setSelectedMonth] = useState<string>(selectedSpan);
+ const [selectedDay, setSelectedDay] = useState<number>(21);
+ const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+
+ const { days } = useGetDaysInCycle(selectedMonth);
+ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
  useEffect(() => {
   setTest(95);
@@ -55,27 +65,98 @@ export default function Home() {
   }
  }, []);
 
+ useEffect(() => {
+  if (scrollContainerRef.current) {
+   const scrollContainer = scrollContainerRef.current;
+   const scrollStopElement = scrollContainer.querySelector(
+    '.scroll-stop'
+   ) as HTMLElement | null;
+
+   if (scrollStopElement) {
+    const containerWidth = scrollContainer.clientWidth;
+    const scrollStopPosition = scrollStopElement.offsetLeft;
+    const scrollStopCenterPosition = scrollStopPosition - containerWidth / 2;
+
+    scrollContainer.scrollLeft = scrollStopCenterPosition;
+   }
+  }
+ }, [selectedMonth, selectedDay, date]);
+
  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
   setDate(event.target.value);
  };
 
+ const handleMonthClick = (month: string) => {
+  setSelectedMonth(month);
+ };
+
+ const handleDayClick = (day: number) => {
+  setSelectedDay(day);
+ };
+
+ const handleBackYear = () => {
+  setSelectedYear(selectedYear - 1);
+ };
+
+ const handleFowardYear = () => {
+  setSelectedYear(selectedYear + 1);
+ };
+
  //esto se debe calcular segun los meses porque todos los meses no traen 31 dias
 
- const days = [
-  22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
-  13, 14, 15, 16, 17, 18, 19, 20, 21,
+ const months = [
+  'Ene-Feb',
+  'Feb-Mar',
+  'Mar-May',
+  'May-Jun',
+  'Jun-Jul',
+  'Jul-Ago',
+  'Ago-Sep',
+  'Sep-Oct',
+  'Oct-Nov',
+  'Nov-Dic',
+  'Dic-Ene',
  ];
 
  return (
   <main className='flex min-h-screen flex-col'>
    <section className='flex flex-col bg-gradient-to-t from-pink-950 via-black  to-black to-60% '>
-    <h1 className='h-fit p-4 pb-8 text-center'>PEDIDOS</h1>
+    <div className='flex justify-between px-10 p-4 pb-8 '>
+     <svg
+      onClick={() => handleBackYear()}
+      className='fill-current  text-white'
+      xmlns='http://www.w3.org/2000/svg'
+      height='24'
+      viewBox='0 -960 960 960'
+      width='24'>
+      <path d='M640-80 240-480l400-400 71 71-329 329 329 329-71 71Z' />
+     </svg>
+     <h2 className='h-fit text-2xl text-center'>{selectedYear}</h2>
+     <svg
+      onClick={() => handleFowardYear()}
+      className={`fill-current text-white ${
+       selectedYear === currentYear && 'invisible'
+      }`}
+      xmlns='http://www.w3.org/2000/svg'
+      height='24'
+      viewBox='0 -960 960 960'
+      width='24'>
+      <path d='m321-80-71-71 329-329-329-329 71-71 400 400L321-80Z' />
+     </svg>
+    </div>
+
+    {date === 'day' && (
+     <div className='text-center'>
+      <p>{selectedMonth}</p>
+     </div>
+    )}
+
     <select
-     className='text-center text-[#eb3356] p-1  mx-36 bg-black'
+     className='text-center text-[#eb3356] p-1  mx-24 bg-black'
      value={date}
      onChange={handleSelectChange}>
-     <option value='month'>MES</option>
-     <option value='year'>AÑO</option>
+     <option value='month'>PEDIDOS POR MES</option>
+     <option value='day'>PEDIDOS POR DIA</option>
     </select>
 
     <h3 className='text-center text-4xl pt-10'>{total}</h3>
@@ -84,25 +165,30 @@ export default function Home() {
     </div>
    </section>
    <section className='flex-1  bg-black'>
-    <article className='flex overflow-x-auto overflow-visible space-x-4 bg-stone-800 text-neutral-600  py-2 px-2 border-t border-t-[#eb3356] '>
-     {date === 'year' ? (
-      <>
-       <span className='whitespace-nowrap'>Ene-Feb</span>
-       <span className='whitespace-nowrap'>Feb-Mar</span>
-       <span className='whitespace-nowrap'>Mar-May</span>
-       <span className='whitespace-nowrap'>May-Jun</span>
-       <span className='whitespace-nowrap'>Jun-Jul</span>
-       <span className='whitespace-nowrap'>Jul-Ago</span>
-       <span className='whitespace-nowrap text-white'>Ago-Sep</span>
-       <span className='whitespace-nowrap'>Sep-Oct</span>
-       <span className='whitespace-nowrap'>Oct-Nov</span>
-       <span className='whitespace-nowrap'>Nov-Dic</span>
-      </>
+    <article
+     className='flex overflow-x-auto overflow-visible space-x-4 bg-stone-800 text-neutral-600  py-2 px-2 border-t border-t-[#eb3356] scroll-smooth '
+     ref={scrollContainerRef}>
+     {date === 'month' ? (
+      months.map((month) => {
+       return (
+        <span
+         className={`whitespace-nowrap ${
+          selectedMonth === month && 'text-white scroll-stop'
+         }`}
+         onClick={() => handleMonthClick(month)}
+         key={month}>
+         {month}
+        </span>
+       );
+      })
      ) : (
       <>
        {days.map((day) => {
         return (
-         <span className='whitespace-nowrap' key={day}>
+         <span
+          className={`${selectedDay === day && 'text-white scroll-stop'}`}
+          onClick={() => handleDayClick(day)}
+          key={day}>
           {day}
          </span>
         );
@@ -125,7 +211,7 @@ export default function Home() {
      </div>
     </div>
 
-    <div className='flex space-x-28 items-center justify-center'>
+    <div className='flex justify-between items-center px-20'>
      <button className='border-4 border-[#eb3356] rounded-full p-2'>
       <svg
        className='h-8 w-8 fill-current  text-white'
