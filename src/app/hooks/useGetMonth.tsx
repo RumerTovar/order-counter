@@ -1,3 +1,18 @@
+const monthNames = [
+ 'Ene',
+ 'Feb',
+ 'Mar',
+ 'Abr',
+ 'May',
+ 'Jun',
+ 'Jul',
+ 'Ago',
+ 'Sep',
+ 'Oct',
+ 'Nov',
+ 'Dic',
+];
+
 export const useGetMonth = () => {
  const currentDate = new Date();
  const currentMonth = currentDate.getMonth() + 1;
@@ -19,20 +34,6 @@ export const useGetMonth = () => {
  }
 
  function getMonthName(monthIndex: number) {
-  const monthNames = [
-   'Ene',
-   'Feb',
-   'Mar',
-   'Abr',
-   'May',
-   'Jun',
-   'Jul',
-   'Ago',
-   'Sep',
-   'Oct',
-   'Nov',
-   'Dic',
-  ];
   return monthNames[monthIndex - 1];
  }
 

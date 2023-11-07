@@ -7,24 +7,33 @@ import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { useGetMonth } from './hooks/useGetMonth';
 import { useGetDaysInCycle } from './hooks/useGetDaysinCicle';
+import { useFilterOrders } from './hooks/useFilterOrders';
 
 interface Order {
  id: number;
  number: number;
  user_id: number;
- order_date: string;
+ order_date: Date;
 }
 
 export default function Home() {
  const { currentDay, currentYear, selectedSpan } = useGetMonth();
 
- const [date, setDate] = useState('month');
+ const [selectedDate, setSelectedDate] = useState('month');
  const [orders, setOrders] = useState<Order[] | null>(null);
  const [total, setTotal] = useState(0);
  const [test, setTest] = useState(0);
  const [selectedMonth, setSelectedMonth] = useState<string>(selectedSpan);
- const [selectedDay, setSelectedDay] = useState<number>(21);
+ const [selectedDay, setSelectedDay] = useState<number>(currentDay);
  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+
+ const { totalOrders } = useFilterOrders(
+  orders,
+  selectedMonth,
+  selectedDate,
+  selectedDay,
+  selectedYear
+ );
 
  const { days } = useGetDaysInCycle(selectedMonth);
  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -80,10 +89,10 @@ export default function Home() {
     scrollContainer.scrollLeft = scrollStopCenterPosition;
    }
   }
- }, [selectedMonth, selectedDay, date]);
+ }, [selectedMonth, selectedDay, selectedDate]);
 
  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-  setDate(event.target.value);
+  setSelectedDate(event.target.value);
  };
 
  const handleMonthClick = (month: string) => {
@@ -102,8 +111,6 @@ export default function Home() {
   setSelectedYear(selectedYear + 1);
  };
 
- //esto se debe calcular segun los meses porque todos los meses no traen 31 dias
-
  const months = [
   'Ene-Feb',
   'Feb-Mar',
@@ -119,7 +126,7 @@ export default function Home() {
  ];
 
  return (
-  <main className='flex min-h-screen flex-col'>
+  <main className='flex min-h-screen flex-col '>
    <section className='flex flex-col bg-gradient-to-t from-pink-950 via-black  to-black to-60% '>
     <div className='flex justify-between px-10 p-4 pb-8 '>
      <svg
@@ -145,7 +152,7 @@ export default function Home() {
      </svg>
     </div>
 
-    {date === 'day' && (
+    {selectedDate === 'day' && (
      <div className='text-center'>
       <p>{selectedMonth}</p>
      </div>
@@ -153,13 +160,13 @@ export default function Home() {
 
     <select
      className='text-center text-[#eb3356] p-1  mx-24 bg-black'
-     value={date}
+     value={selectedDate}
      onChange={handleSelectChange}>
      <option value='month'>PEDIDOS POR MES</option>
      <option value='day'>PEDIDOS POR DIA</option>
     </select>
 
-    <h3 className='text-center text-4xl pt-10'>{total}</h3>
+    <h3 className='text-center text-4xl pt-10'>{totalOrders}</h3>
     <div className='pt-5'>
      <Chart />
     </div>
@@ -168,7 +175,7 @@ export default function Home() {
     <article
      className='flex overflow-x-auto overflow-visible space-x-4 bg-stone-800 text-neutral-600  py-2 px-2 border-t border-t-[#eb3356] scroll-smooth '
      ref={scrollContainerRef}>
-     {date === 'month' ? (
+     {selectedDate === 'month' ? (
       months.map((month) => {
        return (
         <span
