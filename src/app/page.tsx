@@ -35,6 +35,8 @@ export default function Home() {
   selectedYear
  );
 
+ const [inputValue, setInputValue] = useState<string | number>(totalOrders);
+
  const { days } = useGetDaysInCycle(selectedMonth);
  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -89,7 +91,9 @@ export default function Home() {
     scrollContainer.scrollLeft = scrollStopCenterPosition;
    }
   }
- }, [selectedMonth, selectedDay, selectedDate]);
+
+  setInputValue(totalOrders);
+ }, [selectedMonth, selectedDay, selectedDate, totalOrders]);
 
  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
   setSelectedDate(event.target.value);
@@ -109,6 +113,10 @@ export default function Home() {
 
  const handleFowardYear = () => {
   setSelectedYear(selectedYear + 1);
+ };
+
+ const handleOrderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  setInputValue(Number(event.target.value).toString());
  };
 
  const months = [
@@ -151,22 +159,31 @@ export default function Home() {
       <path d='m321-80-71-71 329-329-329-329 71-71 400 400L321-80Z' />
      </svg>
     </div>
-
     {selectedDate === 'day' && (
-     <div className='text-center'>
+     <div className='text-center py-2'>
       <p>{selectedMonth}</p>
      </div>
     )}
-
     <select
-     className='text-center text-[#eb3356] p-1  mx-24 bg-black'
+     className='text-center text-[#eb3356] p-1  mx-24 bg-black focus:outline-none'
      value={selectedDate}
      onChange={handleSelectChange}>
      <option value='month'>PEDIDOS POR MES</option>
      <option value='day'>PEDIDOS POR DIA</option>
     </select>
+    {selectedDate === 'month' ? (
+     <span className='text-center text-6xl pt-10 focus:outline-none'>
+      {totalOrders}
+     </span>
+    ) : (
+     <input
+      className='bg-black text-center text-6xl pt-10 focus:outline-none'
+      type='number'
+      onChange={handleOrderChange}
+      value={inputValue}
+     />
+    )}
 
-    <h3 className='text-center text-4xl pt-10'>{totalOrders}</h3>
     <div className='pt-5'>
      <Chart />
     </div>
@@ -190,12 +207,12 @@ export default function Home() {
       })
      ) : (
       <>
-       {days.map((day) => {
+       {days.map((day, index) => {
         return (
          <span
           className={`${selectedDay === day && 'text-white scroll-stop'}`}
           onClick={() => handleDayClick(day)}
-          key={day}>
+          key={index}>
           {day}
          </span>
         );
@@ -204,7 +221,7 @@ export default function Home() {
      )}
     </article>
 
-    <div className='flex w-full justify-center align-middle py-20'>
+    {/*     <div className='flex w-full justify-center align-middle py-20'>
      <div className='w-20 h-20 '>
       <CircularProgressbar
        value={test}
@@ -217,25 +234,20 @@ export default function Home() {
       />
      </div>
     </div>
-
-    <div className='flex justify-between items-center px-20'>
-     <button className='border-4 border-[#eb3356] rounded-full p-2'>
+ */}
+    {/*     <div className='flex  justify-center'>
+     <button className='flex border-4 border-[#eb3356] rounded-full p-4  w-36 justify-between'>
+      GUARDAR
       <svg
-       className='h-8 w-8 fill-current  text-white'
+       className='fill-current  text-white'
        xmlns='http://www.w3.org/2000/svg'
-       viewBox='0 -960 960 960'>
-       <path d='M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z' />
+       height='24'
+       viewBox='0 -960 960 960'
+       width='24'>
+       <path d='M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z' />
       </svg>
      </button>
-     <button className='border-4 border-[#eb3356] rounded-full p-2'>
-      <svg
-       className='h-8 w-8 fill-current  text-white'
-       xmlns='http://www.w3.org/2000/svg'
-       viewBox='0 -960 960 960'>
-       <path d='M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z' />
-      </svg>
-     </button>
-    </div>
+    </div> */}
    </section>
   </main>
  );
