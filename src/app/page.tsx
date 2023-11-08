@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useId } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import Chart from '../components/Chart';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
@@ -8,7 +8,6 @@ import 'react-circular-progressbar/dist/styles.css';
 import { useGetMonth } from './hooks/useGetMonth';
 import { useGetDaysInCycle } from './hooks/useGetDaysinCicle';
 import { useFilterOrders } from './hooks/useFilterOrders';
-
 interface Order {
  id: number;
  number: number;
@@ -20,59 +19,47 @@ export default function Home() {
  const { currentDay, currentYear, selectedSpan } = useGetMonth();
 
  const [selectedDate, setSelectedDate] = useState('month');
- const [orders, setOrders] = useState<Order[] | null>(null);
- const [total, setTotal] = useState(0);
+ const [allOrders, setAllOrders] = useState<Order[] | null>(null);
  const [test, setTest] = useState(0);
  const [selectedMonth, setSelectedMonth] = useState<string>(selectedSpan);
  const [selectedDay, setSelectedDay] = useState<number>(currentDay);
  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+ const [hasValueChanged, setHasValueChanged] = useState(true);
 
- const { totalOrders } = useFilterOrders(
-  orders,
+ const { totalFilteredOrders } = useFilterOrders(
+  allOrders,
   selectedMonth,
   selectedDate,
   selectedDay,
   selectedYear
  );
 
- const [inputValue, setInputValue] = useState<string | number>(totalOrders);
-
+ const [inputValue, setInputValue] = useState<string | number>(
+  totalFilteredOrders
+ );
  const { days } = useGetDaysInCycle(selectedMonth);
  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+ const fetchData = async () => {
+  const { data: orders, error } = await supabase.from('orders').select('*');
+
+  if (error) {
+   console.log(error);
+  } else {
+   setAllOrders(orders);
+   localStorage.setItem('orders', JSON.stringify(orders));
+  }
+ };
 
  useEffect(() => {
   setTest(95);
   const getOrdersFromLocal = localStorage.getItem('orders');
 
-  const calculateTotal = (ordersData: Order[]) => {
-   let acc = 0;
-
-   ordersData?.forEach((order: Order) => {
-    return (acc += order.number);
-   });
-
-   return setTotal(acc);
-  };
-
-  const fetchData = async () => {
-   const { data: orders, error } = await supabase.from('orders').select('*');
-
-   if (error) {
-    console.log(error);
-   } else {
-    setOrders(orders);
-    localStorage.setItem('orders', JSON.stringify(orders));
-    calculateTotal(orders);
-   }
-  };
-
   if (!getOrdersFromLocal) {
    fetchData();
   } else {
    const parseOrders = JSON.parse(getOrdersFromLocal);
-
-   setOrders(parseOrders);
-   calculateTotal(parseOrders);
+   setAllOrders(parseOrders);
   }
  }, []);
 
@@ -92,8 +79,63 @@ export default function Home() {
    }
   }
 
-  setInputValue(totalOrders);
- }, [selectedMonth, selectedDay, selectedDate, totalOrders]);
+  setInputValue(totalFilteredOrders);
+  setHasValueChanged(true);
+ }, [selectedMonth, selectedDay, selectedDate, totalFilteredOrders]);
+
+ const saveOrder = async () => {
+  const monthMap: { [key: string]: number } = {
+   Ene: 0,
+   Feb: 1,
+   Mar: 2,
+   May: 4,
+   Jun: 5,
+   Jul: 6,
+   Ago: 7,
+   Sep: 8,
+   Oct: 9,
+   Nov: 10,
+   Dic: 11,
+  };
+
+  const [startMonth, endMonth] = selectedMonth.split('-');
+  const startMonthNumber = monthMap[startMonth];
+  const endMonthNumber = monthMap[endMonth];
+
+  const month = selectedDay >= 22 ? startMonthNumber : endMonthNumber;
+
+  if (totalFilteredOrders > 0) {
+   const { data, error } = await supabase
+    .from('orders')
+    .update({ number: inputValue })
+    .eq('order_date', `${selectedYear}-${month + 1}-${selectedDay}`)
+    .select();
+
+   if (error) {
+    console.log(error);
+   }
+
+   fetchData();
+   console.log(data);
+  } else {
+   const { data: orders, error } = await supabase
+    .from('orders')
+    .insert([
+     {
+      number: inputValue,
+      user_id: 1,
+      order_date: `${selectedYear}-${month + 1}-${selectedDay}`,
+     },
+    ])
+    .select();
+
+   if (error) {
+    console.log(error);
+   }
+   fetchData();
+   console.log(orders);
+  }
+ };
 
  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
   setSelectedDate(event.target.value);
@@ -116,7 +158,13 @@ export default function Home() {
  };
 
  const handleOrderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  setInputValue(Number(event.target.value).toString());
+  const value = Math.max(
+   0,
+   Math.min(99, Number(event.target.value))
+  ).toString();
+
+  setHasValueChanged(Number(event.target.value) === totalFilteredOrders);
+  setInputValue(value);
  };
 
  const months = [
@@ -159,11 +207,11 @@ export default function Home() {
       <path d='m321-80-71-71 329-329-329-329 71-71 400 400L321-80Z' />
      </svg>
     </div>
-    {selectedDate === 'day' && (
-     <div className='text-center py-2'>
-      <p>{selectedMonth}</p>
-     </div>
-    )}
+    <div
+     className={`text-center py-2 ${selectedDate !== 'day' && 'invisible'}`}>
+     <p>{selectedMonth}</p>
+    </div>
+
     <select
      className='text-center text-[#eb3356] p-1  mx-24 bg-black focus:outline-none'
      value={selectedDate}
@@ -172,19 +220,25 @@ export default function Home() {
      <option value='day'>PEDIDOS POR DIA</option>
     </select>
     {selectedDate === 'month' ? (
-     <span className='text-center text-6xl pt-10 focus:outline-none'>
-      {totalOrders}
-     </span>
+     <input
+      disabled
+      className='bg-transparent text-center text-6xl pt-7 focus:outline-none'
+      value={totalFilteredOrders}
+     />
     ) : (
      <input
-      className='bg-black text-center text-6xl pt-10 focus:outline-none'
+      name='orderInput'
+      className='bg-transparent text-center text-6xl pt-7  focus:outline-none'
       type='number'
+      min={0}
+      max={99}
+      maxLength={2}
       onChange={handleOrderChange}
       value={inputValue}
      />
     )}
 
-    <div className='pt-5'>
+    <div className='pt-4'>
      <Chart />
     </div>
    </section>
@@ -221,7 +275,7 @@ export default function Home() {
      )}
     </article>
 
-    {/*     <div className='flex w-full justify-center align-middle py-20'>
+    <div className='flex w-full justify-center align-middle py-10'>
      <div className='w-20 h-20 '>
       <CircularProgressbar
        value={test}
@@ -234,20 +288,15 @@ export default function Home() {
       />
      </div>
     </div>
- */}
-    {/*     <div className='flex  justify-center'>
-     <button className='flex border-4 border-[#eb3356] rounded-full p-4  w-36 justify-between'>
+
+    <div className='flex  justify-center'>
+     <button
+      onClick={saveOrder}
+      disabled={hasValueChanged}
+      className='flex border-4 border-[#eb3356] bg-[#eb3356] rounded-full p-2  justify-between disabled:opacity-25'>
       GUARDAR
-      <svg
-       className='fill-current  text-white'
-       xmlns='http://www.w3.org/2000/svg'
-       height='24'
-       viewBox='0 -960 960 960'
-       width='24'>
-       <path d='M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z' />
-      </svg>
      </button>
-    </div> */}
+    </div>
    </section>
   </main>
  );

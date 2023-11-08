@@ -34,7 +34,7 @@ export const useFilterOrders = (
  const endDate = new Date(year, endMonthNumber, 21);
 
  let filterOrders = null;
- let totalOrders = 0;
+ let totalFilteredOrders = 0;
 
  if (orders !== null) {
   if (selectedDate === 'month') {
@@ -43,7 +43,7 @@ export const useFilterOrders = (
     return orderDate >= startDate && orderDate <= endDate;
    });
 
-   totalOrders = filterOrders.reduce((acc, order) => {
+   totalFilteredOrders = filterOrders.reduce((acc, order) => {
     return acc + order.number;
    }, 0);
   } else {
@@ -52,19 +52,8 @@ export const useFilterOrders = (
      ? new Date(year, startMonthNumber, day - 1)
      : new Date(year, endMonthNumber, day - 1);
 
-   //console.log(filterDate);
-
    filterOrders = orders.filter((order) => {
     const orderDate = new Date(order.order_date);
-
-    if (
-     orderDate.getFullYear() === filterDate.getFullYear() &&
-     orderDate.getMonth() === filterDate.getMonth() &&
-     orderDate.getDate() === filterDate.getDate() &&
-     orderDate.setHours(0, 0, 0, 0) === filterDate.setHours(0, 0, 0, 0)
-    ) {
-     // console.log(orderDate);
-    }
 
     return (
      orderDate.getFullYear() === filterDate.getFullYear() &&
@@ -75,11 +64,11 @@ export const useFilterOrders = (
    });
 
    if (filterOrders && filterOrders.length > 0) {
-    //console.log(filterOrders);
-    totalOrders = filterOrders[0].number;
+    totalFilteredOrders = filterOrders[0].number;
    }
   }
  }
+ console.log(filterOrders);
 
- return { totalOrders };
+ return { totalFilteredOrders };
 };
