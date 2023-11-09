@@ -1,23 +1,5 @@
-interface Order {
- id: number;
- number: number;
- user_id: number;
- order_date: Date;
-}
-
-const monthMap: { [key: string]: number } = {
- Ene: 0,
- Feb: 1,
- Mar: 2,
- May: 4,
- Jun: 5,
- Jul: 6,
- Ago: 7,
- Sep: 8,
- Oct: 9,
- Nov: 10,
- Dic: 11,
-};
+import { Order } from '../lib/constants';
+import { monthMap } from '../lib/utils';
 
 export const useFilterOrders = (
  orders: Order[] | null,
@@ -49,8 +31,8 @@ export const useFilterOrders = (
   } else {
    const filterDate =
     day >= 22
-     ? new Date(year, startMonthNumber, day - 1)
-     : new Date(year, endMonthNumber, day - 1);
+     ? new Date(year, startMonthNumber, day)
+     : new Date(year, endMonthNumber, day);
 
    filterOrders = orders.filter((order) => {
     const orderDate = new Date(order.order_date);
@@ -68,7 +50,6 @@ export const useFilterOrders = (
    }
   }
  }
- console.log(filterOrders);
 
  return { totalFilteredOrders };
 };

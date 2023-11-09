@@ -1,23 +1,19 @@
 'use client';
 
-import { useEffect, useState, useRef, useId } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { useEffect, useState, useRef } from 'react';
 import Chart from '../components/Chart';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { useGetMonth } from './hooks/useGetMonth';
-import { useGetDaysInCycle } from './hooks/useGetDaysinCicle';
-import { useFilterOrders } from './hooks/useFilterOrders';
-interface Order {
- id: number;
- number: number;
- user_id: number;
- order_date: Date;
-}
+import { useGetMonth } from '../hooks/useGetMonth';
+import { useGetDaysInCycle } from '../hooks/useGetDaysinCicle';
+import { useFilterOrders } from '../hooks/useFilterOrders';
+import { Order } from '../lib/constants';
+import { months } from '../lib/utils';
+import SaveButton from '@/components/SaveButton';
+import { fetchData } from '@/lib/supabaseFetch';
 
 export default function Home() {
  const { currentDay, currentYear, selectedSpan } = useGetMonth();
-
  const [selectedDate, setSelectedDate] = useState('month');
  const [allOrders, setAllOrders] = useState<Order[] | null>(null);
  const [test, setTest] = useState(0);
@@ -34,36 +30,18 @@ export default function Home() {
   selectedYear
  );
 
+ const { days } = useGetDaysInCycle(selectedMonth);
+
  const [inputValue, setInputValue] = useState<string | number>(
   totalFilteredOrders
  );
- const { days } = useGetDaysInCycle(selectedMonth);
+
  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-
- const fetchData = async () => {
-  const { data: orders, error } = await supabase.from('orders').select('*');
-
-  if (error) {
-   console.log(error);
-  } else {
-   setAllOrders(orders);
-   localStorage.setItem('orders', JSON.stringify(orders));
-  }
- };
 
  useEffect(() => {
   setTest(95);
-  const getOrdersFromLocal = localStorage.getItem('orders');
+  fetchData(setAllOrders);
 
-  if (!getOrdersFromLocal) {
-   fetchData();
-  } else {
-   const parseOrders = JSON.parse(getOrdersFromLocal);
-   setAllOrders(parseOrders);
-  }
- }, []);
-
- useEffect(() => {
   if (scrollContainerRef.current) {
    const scrollContainer = scrollContainerRef.current;
    const scrollStopElement = scrollContainer.querySelector(
@@ -82,60 +60,6 @@ export default function Home() {
   setInputValue(totalFilteredOrders);
   setHasValueChanged(true);
  }, [selectedMonth, selectedDay, selectedDate, totalFilteredOrders]);
-
- const saveOrder = async () => {
-  const monthMap: { [key: string]: number } = {
-   Ene: 0,
-   Feb: 1,
-   Mar: 2,
-   May: 4,
-   Jun: 5,
-   Jul: 6,
-   Ago: 7,
-   Sep: 8,
-   Oct: 9,
-   Nov: 10,
-   Dic: 11,
-  };
-
-  const [startMonth, endMonth] = selectedMonth.split('-');
-  const startMonthNumber = monthMap[startMonth];
-  const endMonthNumber = monthMap[endMonth];
-
-  const month = selectedDay >= 22 ? startMonthNumber : endMonthNumber;
-
-  if (totalFilteredOrders > 0) {
-   const { data, error } = await supabase
-    .from('orders')
-    .update({ number: inputValue })
-    .eq('order_date', `${selectedYear}-${month + 1}-${selectedDay}`)
-    .select();
-
-   if (error) {
-    console.log(error);
-   }
-
-   fetchData();
-   console.log(data);
-  } else {
-   const { data: orders, error } = await supabase
-    .from('orders')
-    .insert([
-     {
-      number: inputValue,
-      user_id: 1,
-      order_date: `${selectedYear}-${month + 1}-${selectedDay}`,
-     },
-    ])
-    .select();
-
-   if (error) {
-    console.log(error);
-   }
-   fetchData();
-   console.log(orders);
-  }
- };
 
  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
   setSelectedDate(event.target.value);
@@ -167,19 +91,14 @@ export default function Home() {
   setInputValue(value);
  };
 
- const months = [
-  'Ene-Feb',
-  'Feb-Mar',
-  'Mar-May',
-  'May-Jun',
-  'Jun-Jul',
-  'Jul-Ago',
-  'Ago-Sep',
-  'Sep-Oct',
-  'Oct-Nov',
-  'Nov-Dic',
-  'Dic-Ene',
- ];
+ const buttonProps = {
+  selectedMonth,
+  selectedDay,
+  selectedYear,
+  totalFilteredOrders,
+  inputValue,
+  hasValueChanged,
+ };
 
  return (
   <main className='flex min-h-screen flex-col '>
@@ -288,15 +207,7 @@ export default function Home() {
       />
      </div>
     </div>
-
-    <div className='flex  justify-center'>
-     <button
-      onClick={saveOrder}
-      disabled={hasValueChanged}
-      className='flex border-4 border-[#eb3356] bg-[#eb3356] rounded-full p-2  justify-between disabled:opacity-25'>
-      GUARDAR
-     </button>
-    </div>
+    <SaveButton {...buttonProps} />
    </section>
   </main>
  );
