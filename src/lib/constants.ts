@@ -1,3 +1,5 @@
+import { SetStateAction } from 'react';
+
 export type Order = {
  id: number;
  number: number;
@@ -11,17 +13,38 @@ export interface SupabaseResponse {
 }
 
 export interface DataProps {
- inputValue: string | number;
- selectedYear: number;
- month: number;
- selectedDay: number;
+ inputValue: string;
+ setInputValue: React.Dispatch<SetStateAction<string>>;
+ selectedDate: string;
+ setAllOrders: React.Dispatch<SetStateAction<Order[] | null>>;
+ setHasValueChanged: React.Dispatch<SetStateAction<boolean>>;
+}
+
+export interface DateSelector {
+ tabIndex: number;
+ selectedDate: string;
+ setSelectedDate: React.Dispatch<SetStateAction<string>>;
+ setHasValueChanged: React.Dispatch<SetStateAction<boolean>>;
+}
+
+export interface OrderInput {
+ inputValue: string;
+ setInputValue: React.Dispatch<SetStateAction<string>>;
+ setHasValueChanged: React.Dispatch<SetStateAction<boolean>>;
+ filterOrders: ResultObject;
 }
 
 export interface SaveButton {
- selectedMonth: string;
- selectedDay: number;
- selectedYear: number;
- totalFilteredOrders: number;
- inputValue: number | string;
+ filterOrders: ResultObject;
  hasValueChanged: boolean;
+ inputValue: string;
+ selectedDate: string;
+ setAllOrders: React.Dispatch<SetStateAction<Order[] | null>>;
+ setInputValue: React.Dispatch<SetStateAction<string>>;
+ setHasValueChanged: React.Dispatch<SetStateAction<boolean>>;
+}
+
+export interface ResultObject {
+ value: string;
+ exist: boolean;
 }

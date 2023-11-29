@@ -1,9 +1,15 @@
 import { supabase } from '@/lib/supabaseClient';
 import { Order, SupabaseResponse, DataProps } from '../lib/constants';
-export const updateData = async (props: DataProps) => {
- const { inputValue, selectedYear, month, selectedDay } = props;
+import { fetchData } from './supabaseFetch';
 
- const selectedDate = `${selectedYear}-${month + 1}-${selectedDay}`;
+export const updateData = async (props: DataProps) => {
+ const {
+  inputValue,
+  setInputValue,
+  selectedDate,
+  setAllOrders,
+  setHasValueChanged,
+ } = props;
 
  const { data, error }: SupabaseResponse = await supabase
   .from('orders')
@@ -29,6 +35,9 @@ export const updateData = async (props: DataProps) => {
  }
 
  localStorage.setItem('orders', JSON.stringify(orders));
+
+ fetchData(setAllOrders, setInputValue, selectedDate);
+ setHasValueChanged(true);
  if (error) {
   console.error(error);
  }
